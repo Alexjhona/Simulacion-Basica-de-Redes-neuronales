@@ -7,17 +7,17 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nexolab-crispdm.pages.dev"),
-  title: "NexoLab | Laboratorio CRISP-DM",
+  title: "Laboratorio Interactivo de Modelos",
   description:
     "Del dato a la decisión: laboratorio visual de minería de datos e inteligencia de negocios.",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
   openGraph: {
-    title: "NexoLab — CRISP-DM en acción",
-    description: "Explora cómo aprende un modelo, fase por fase.",
+    title: "Laboratorio Interactivo de Modelos",
+    description: "Explora RN, Random Forest y CNN fase por fase.",
     type: "website",
     images: [{ url: "/og.png", width: 1536, height: 1024, alt: "NexoLab — CRISP-DM en acción" }],
   },
-  twitter: { card: "summary_large_image", title: "NexoLab — CRISP-DM en acción", description: "Del dato a la decisión.", images: ["/og.png"] },
+  twitter: { card: "summary_large_image", title: "Laboratorio Interactivo de Modelos", description: "RN, Random Forest y CNN en una sola página.", images: ["/og.png"] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

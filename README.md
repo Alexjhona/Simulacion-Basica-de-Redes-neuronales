@@ -1,29 +1,42 @@
-# NexoLab — CRISP-DM interactivo
+# Simulación básica de modelos
 
-Aplicación académica para explicar el ciclo completo de minería de datos aplicado a inteligencia de negocios. Incluye un laboratorio visual con RN, Random Forest y CNN; controles contra fuga; API consumible; contrato OpenAPI y un backend Python opcional con Swagger.
+Página única con un laboratorio interactivo para observar, por fases, tres modelos: **Red Neuronal (RN)**, **Random Forest (RF)** y **Red Convolucional (CNN)**.
 
-## Aplicación web
+## 1. Red neuronal: reconocimiento de números
+
+El usuario dibuja un número en una cuadrícula. Cada cuadro funciona como un píxel de entrada; la simulación convierte esos píxeles en activaciones, compara el patrón con los números del 0 al 9 y devuelve los tres candidatos con mayor probabilidad.
+
+La captura original mostraba `NaN% confianza`. Era un error: la probabilidad podía quedar sin un valor válido durante la normalización. Se corrigió calculando pesos finitos, comprobando el total y normalizando los tres resultados para que sumen 100%.
+
+![Red neuronal antes de la corrección](docs/screenshots/red-neuronal-antes-de-correccion.png)
+
+## 2. Random Forest: riesgo de abandono
+
+El usuario modifica antigüedad, uso mensual, tickets de soporte y gasto. Cinco árboles toman decisiones independientes (`SALE` o `SIGUE`) y luego votan. El porcentaje final combina 70% de la votación del bosque y 30% del puntaje de las variables.
+
+También se corrigió una inconsistencia: antes podían votar 3 de 5 árboles por abandono y mostrarse solo 46% de riesgo. Ahora una mayoría de abandono produce un riesgo mayor al 50% y el texto de recomendación coincide con el resultado.
+
+![Random Forest para riesgo de abandono](docs/screenshots/random-forest-riesgo-cliente.png)
+
+## 3. Red convolucional: clasificación de animales
+
+El usuario sube una imagen o elige un ejemplo. La vista muestra el recorrido conceptual: imagen de entrada, mapas de rasgos, clasificador y probabilidades de gato, perro o ave. Es una demostración educativa; para producción debe conectarse un modelo CNN entrenado y validado con imágenes reales.
+
+![CNN para clasificación de animales](docs/screenshots/cnn-clasificacion-animal.png)
+
+## Ejecutar
 
 ```bash
 npm install
 npm run dev
 ```
 
-Todo el laboratorio y la prueba de API viven en `/`. El contrato está en `/openapi.json` y la inferencia demostrativa en `POST /api/predict`.
+Abra `http://localhost:3000`. Todo el contenido visible está reunido en una sola página.
 
-## Backend Python entrenable
+## Validación
 
 ```bash
-python -m venv .venv
-.venv/Scripts/pip install -r backend/requirements.txt
-.venv/Scripts/python backend/train_models.py
-.venv/Scripts/uvicorn backend.main:app --reload
+npm test
 ```
 
-Swagger queda en `http://127.0.0.1:8000/docs`. Los artefactos se escriben en `backend/artifacts/` y no se mezclan los conjuntos de entrenamiento y prueba.
-
-## Recolección responsable
-
-`backend/scrape_manual_captcha.py` comprueba `robots.txt`, usa un agente identificable y pausa si aparece CAPTCHA. No incorpora técnicas de evasión. Antes de usarlo, verifique términos, licencia, datos personales y autorización de la empresa.
-
-La justificación metodológica completa está en `docs/METODOLOGIA_CRISP_DM.md`.
+La prueba compila el proyecto y comprueba que la página contenga únicamente el laboratorio interactivo.

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { CrispLab } from "./crisp-lab";
 
 export const metadata: Metadata = {
-  title: "NexoLab | Laboratorio CRISP-DM",
+  title: "Laboratorio Interactivo de Modelos",
   description:
-    "Laboratorio interactivo de minería de datos e inteligencia de negocios con redes neuronales, Random Forest y CNN.",
+    "Simulación interactiva de red neuronal, Random Forest y red convolucional.",
 };
 
 export default function Home() {

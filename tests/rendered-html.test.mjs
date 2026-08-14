@@ -8,21 +8,16 @@ async function render(path = "/") {
   return worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
 }
 
-test("renderiza el laboratorio CRISP-DM", async () => {
+test("renderiza únicamente el laboratorio interactivo", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /NexoLab/);
-  assert.match(html, /Del dato a/);
-  assert.match(html, /CRISP-DM/);
+  assert.match(html, /LABORATORIO INTERACTIVO/);
+  assert.match(html, /Red neuronal/);
   assert.match(html, /Random Forest/);
-  assert.match(html, /Sin fuga de datos/i);
+  assert.match(html, /Red convolucional/);
+  assert.doesNotMatch(html, /Del dato a/);
+  assert.doesNotMatch(html, /EVALUACIÓN Y GOBIERNO/);
+  assert.doesNotMatch(html, /API \/ SWAGGER/);
   assert.doesNotMatch(html, /codex-preview/);
-});
-
-test("incluye la API en la misma página", async () => {
-  const response = await render();
-  const html = await response.text();
-  assert.match(html, /API \/ SWAGGER/);
-  assert.match(html, /api\/predict/);
 });

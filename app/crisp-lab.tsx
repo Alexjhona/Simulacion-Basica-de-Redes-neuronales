@@ -10,15 +10,6 @@ const models = {
   cnn: { short: "CNN", title: "Red convolucional", subtitle: "Clasifica una imagen de animal", accent: "#6f5bb8" },
 } as const;
 
-const stages = [
-  ["01", "Negocio", "Definir el problema y el KPI"],
-  ["02", "Datos", "Recolectar, perfilar y validar"],
-  ["03", "Preparación", "Limpiar sin contaminar"],
-  ["04", "Modelado", "Entrenar y ajustar"],
-  ["05", "Evaluación", "Medir con datos no vistos"],
-  ["06", "Despliegue", "API, monitoreo y BI"],
-];
-
 const phaseLabels = ["Entrada", "Preparación", "Modelo", "Predicción"];
 
 const digitPatterns: Record<number, string[]> = {
@@ -45,14 +36,19 @@ function patternGrid(n: number) {
 }
 
 function recognizeDigit(grid: number[]) {
-  const scores = Object.entries(digitPatterns).map(([n]) => {
+  const ranked = Object.entries(digitPatterns).map(([n]) => {
     const template = patternGrid(Number(n));
     let diff = 0;
     for (let i = 0; i < grid.length; i++) diff += Math.abs(grid[i] - template[i]);
-    return { n: Number(n), score: Math.max(0.02, 1 - diff / 54) };
+    return { n: Number(n), score: Math.max(0.01, 1 - diff / grid.length) };
   }).sort((a, b) => b.score - a.score);
-  const total = scores.reduce((sum, item) => sum + Math.exp(item.score * 5), 0);
-  return scores.slice(0, 3).map(item => ({ ...item, probability: Math.exp(item.score * 5) / total }));
+  const finalists = ranked.slice(0, 3);
+  const weights = finalists.map(item => Math.exp(item.score * 8));
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  return finalists.map((item, index) => ({
+    ...item,
+    probability: Number.isFinite(total) && total > 0 ? weights[index] / total : 1 / finalists.length,
+  }));
 }
 
 export function CrispLab() {
@@ -66,12 +62,9 @@ export function CrispLab() {
   const [spend, setSpend] = useState(119);
   const [animal, setAnimal] = useState("gato");
   const [preview, setPreview] = useState<string | null>(null);
-  const [leak, setLeak] = useState(false);
-  const [apiResult, setApiResult] = useState("Listo para probar");
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const digitResult = useMemo(() => recognizeDigit(grid), [grid]);
-  const churn = Math.min(96, Math.max(4, Math.round(20 + tickets * 8 + (40 - usage) * .75 + (18 - tenure) * .9 - spend * .08)));
   const treeVotes = [
     tenure < 12 || tickets > 3,
     usage < 45,
@@ -79,6 +72,9 @@ export function CrispLab() {
     tenure < 6,
     usage < 55 && tickets > 4,
   ];
+  const voteRatio = treeVotes.filter(Boolean).length / treeVotes.length;
+  const featureScore = Math.min(1, Math.max(0, (20 + tickets * 8 + (40 - usage) * .75 + (18 - tenure) * .9 - spend * .08) / 100));
+  const churn = Math.round((voteRatio * .7 + featureScore * .3) * 100);
   const animalScores = animal === "gato" ? [82, 12, 6] : animal === "perro" ? [9, 86, 5] : [7, 8, 85];
 
   function switchModel(next: ModelId) {
@@ -112,59 +108,8 @@ export function CrispLab() {
     setPhase(0);
   }
 
-  async function testApi() {
-    setApiResult("Consultando…");
-    try {
-      const response = await fetch("/api/predict", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ model: "rf", features: { tenure, usage, tickets, spend } }) });
-      const data = await response.json();
-      setApiResult(`${data.prediction}: ${Math.round(data.confidence * 100)}%`);
-    } catch { setApiResult("No se pudo conectar"); }
-  }
-
   return (
-    <main>
-      <header className="topbar">
-        <a className="brand" href="#inicio" aria-label="NexoLab inicio"><span className="brand-mark">N</span><span>Nexo<strong>Lab</strong></span></a>
-        <nav aria-label="Navegación principal">
-          <a href="#metodologia">Metodología</a><a href="#laboratorio">Laboratorio</a><a href="#gobierno">Gobierno</a><a href="#api">API / Swagger</a>
-        </nav>
-        <a className="outline-button compact" href="#laboratorio">Abrir laboratorio <span>↗</span></a>
-      </header>
-
-      <section id="inicio" className="hero">
-        <div className="hero-copy">
-          <div className="eyebrow"><span></span> MINERÍA DE DATOS × BUSINESS INTELLIGENCE</div>
-          <h1>Del dato a la<br/><em>decisión.</em></h1>
-          <p>Un laboratorio visual para comprender cómo aprende un modelo, cómo se evalúa sin fuga de datos y cómo llega a una decisión de negocio.</p>
-          <div className="hero-actions"><a className="primary-button" href="#laboratorio">Explorar modelos <span>→</span></a><a className="text-link" href="#metodologia">Ver metodología <span>↓</span></a></div>
-          <div className="hero-proof"><span className="proof-icon">✓</span><p><strong>Aprende haciendo</strong><br/>Modifica una entrada y observa cada fase.</p></div>
-        </div>
-        <div className="hero-visual" aria-label="Vista previa del pipeline">
-          <div className="hero-stamp">CRISP<br/>DM</div>
-          <div className="pipeline-window">
-            <div className="window-bar"><span></span><span></span><span></span><small>pipeline_ventas_v3</small><b>EN LÍNEA</b></div>
-            <div className="mini-pipeline">
-              <div className="mini-step done"><i>✓</i><div><small>01 · INGESTA</small><strong>24,680 registros</strong><span>Fuentes reales + sintéticas</span></div></div>
-              <div className="connector"></div>
-              <div className="mini-step active"><i>⌁</i><div><small>02 · PREPARACIÓN</small><strong>Validando calidad</strong><span className="mini-progress"><b></b></span></div></div>
-              <div className="connector"></div>
-              <div className="mini-step"><i>◇</i><div><small>03 · MODELO</small><strong>Random Forest</strong><span>5-fold cross-validation</span></div></div>
-            </div>
-            <div className="metric-strip"><div><small>ACCURACY</small><strong>91.4%</strong><span>+3.2%</span></div><div><small>F1-SCORE</small><strong>0.89</strong><span>estable</span></div><div><small>DATA LEAK</small><strong className="safe">0</strong><span>controlado</span></div></div>
-          </div>
-          <span className="float-tag tag-one">TRAIN ≠ TEST</span><span className="float-tag tag-two">API READY</span>
-        </div>
-      </section>
-
-      <section className="trust-row"><span>FLUJO COMPLETO</span><b>CRISP-DM</b><i></i><b>DATOS REALES + SINTÉTICOS</b><i></i><b>SIN FUGA DE DATOS</b><i></i><b>API DOCUMENTADA</b></section>
-
-      <section id="metodologia" className="method section-wrap">
-        <div className="section-heading"><div><div className="eyebrow"><span></span> METODOLOGÍA</div><h2>CRISP-DM, sin saltos.</h2></div><p>Cada experimento sigue el mismo ciclo reproducible. El tablero de BI es la última vista; la trazabilidad comienza mucho antes.</p></div>
-        <div className="stage-grid">
-          {stages.map((s, index) => <article key={s[0]}><div className="stage-top"><span>{s[0]}</span><i>{index === 5 ? "↗" : "→"}</i></div><h3>{s[1]}</h3><p>{s[2]}</p></article>)}
-        </div>
-      </section>
-
+    <main className="lab-only-page">
       <section id="laboratorio" className="lab-section">
         <div className="section-wrap">
           <div className="section-heading light"><div><div className="eyebrow"><span></span> LABORATORIO INTERACTIVO</div><h2>Tres modelos. Un mismo rigor.</h2></div><p>Selecciona un modelo, modifica la entrada y recorre el proceso. Las métricas de demostración están separadas de un entrenamiento productivo.</p></div>
@@ -211,7 +156,7 @@ export function CrispLab() {
               <div className="result-panel">
                 <small>RESULTADO</small>
                 {model === "rn" && <><div className="big-result">{digitResult[0].n}</div><h3>{Math.round(digitResult[0].probability * 100)}% confianza</h3><div className="score-list">{digitResult.map(r => <div key={r.n}><span>{r.n}</span><i><b style={{width: `${Math.round(r.probability * 100)}%`}}></b></i><em>{Math.round(r.probability * 100)}%</em></div>)}</div></>}
-                {model === "rf" && <><div className={`risk-ring ${churn > 60 ? "high" : ""}`} style={{"--risk": `${churn * 3.6}deg`} as React.CSSProperties}><strong>{churn}%</strong><span>RIESGO</span></div><h3>{churn > 60 ? "Intervención prioritaria" : churn > 35 ? "Seguimiento recomendado" : "Cliente estable"}</h3><p className="result-note">{treeVotes.filter(Boolean).length} de 5 árboles votan “abandona”.</p></>}
+                {model === "rf" && <><div className={`risk-ring ${churn >= 70 ? "high" : ""}`} style={{"--risk": `${churn * 3.6}deg`} as React.CSSProperties}><strong>{churn}%</strong><span>RIESGO</span></div><h3>{churn >= 70 ? "Intervención prioritaria" : churn >= 50 ? "Seguimiento recomendado" : "Cliente estable"}</h3><p className="result-note">{treeVotes.filter(Boolean).length} de 5 árboles votan “abandona”. El porcentaje combina esos votos con las variables del cliente.</p></>}
                 {model === "cnn" && <><div className="animal-result">{animal === "gato" ? "🐈" : animal === "perro" ? "🐕" : "🦜"}</div><h3>{animal[0].toUpperCase() + animal.slice(1)}</h3><div className="score-list">{["gato","perro","ave"].map((a,i) => <div key={a}><span>{a}</span><i><b style={{width: `${animalScores[i]}%`}}></b></i><em>{animalScores[i]}%</em></div>)}</div></>}
                 <div className="model-note"><span>ⓘ</span><p><strong>Demo educativa</strong>Resultado ilustrativo con pesos de muestra; no sustituye la validación productiva.</p></div>
               </div>
@@ -219,21 +164,6 @@ export function CrispLab() {
           </div>
         </div>
       </section>
-
-      <section id="gobierno" className="governance section-wrap">
-        <div className="section-heading"><div><div className="eyebrow"><span></span> EVALUACIÓN Y GOBIERNO</div><h2>Una métrica alta no basta.</h2></div><p>El modelo recomendado es el que equilibra desempeño, explicabilidad, costo y riesgo para el caso de negocio.</p></div>
-        <div className="governance-grid">
-          <article className="split-card"><div className="card-head"><span>01</span><h3>Partición correcta</h3></div><div className="split-visual"><div className="train">70%<small>ENTRENAMIENTO</small></div><div className="valid">15%<small>VALIDACIÓN</small></div><div className="test">15%<small>PRUEBA</small></div></div><p>El conjunto de prueba queda aislado hasta la evaluación final. En series temporales, se separa por fecha.</p></article>
-          <article className={`leak-card ${leak ? "warning" : ""}`}><div className="card-head"><span>02</span><h3>Detector de fuga</h3><button className="toggle" onClick={() => setLeak(!leak)} aria-pressed={leak}><i></i></button></div><div className="leak-status"><b>{leak ? "⚠" : "✓"}</b><div><strong>{leak ? "Riesgo detectado" : "Sin señales de fuga"}</strong><span>{leak ? "Se normalizó antes de dividir los datos." : "Pipeline ajustado solo con train."}</span></div></div><button className="leak-demo" onClick={() => setLeak(!leak)}>Simular {leak ? "corrección" : "fuga"} <span>→</span></button></article>
-          <article className="criteria-card"><div className="card-head"><span>03</span><h3>Selección del modelo</h3></div><div className="criteria"><div><span>F1 / Recall</span><b>35%</b></div><div><span>Explicabilidad</span><b>30%</b></div><div><span>Latencia / costo</span><b>20%</b></div><div><span>Estabilidad</span><b>15%</b></div></div><p>La ponderación se define con negocio antes de comparar modelos.</p></article>
-        </div>
-      </section>
-
-      <section id="api" className="api-section">
-        <div className="section-wrap api-grid"><div><div className="eyebrow"><span></span> API / SWAGGER</div><h2>Del notebook a una API controlada.</h2><p>El contrato OpenAPI documenta entradas, salidas y versión. Prueba aquí mismo la inferencia sin salir de esta página.</p><div className="api-actions"><button className="primary-button pale" onClick={testApi}>Probar endpoint <span>▶</span></button><a href="/openapi.json">Ver OpenAPI JSON ↗</a><output>{apiResult}</output></div></div><div className="code-card"><div className="code-head"><span>POST</span><b>/api/predict</b><small>v1.0</small></div><pre><code>{`{\n  "model": "rf",\n  "features": {\n    "tenure": ${tenure},\n    "usage": ${usage},\n    "tickets": ${tickets},\n    "spend": ${spend}\n  }\n}`}</code></pre><div className="code-foot"><span>200 OK</span><b>application/json</b></div></div></div>
-      </section>
-
-      <footer><div className="brand"><span className="brand-mark">N</span><span>Nexo<strong>Lab</strong></span></div><p>Proyecto académico · Minería de Datos &amp; Business Intelligence</p><div><a href="#metodologia">Metodología</a><a href="#api">API / Swagger</a><a href="/openapi.json">OpenAPI JSON</a></div></footer>
     </main>
   );
 }

@@ -77,7 +77,9 @@ button { cursor:pointer; }
 .stage-top i { font-style:normal; color:var(--coral); }
 .stage-grid h3 { font:400 19px Georgia,serif; margin:36px 0 10px; }
 .stage-grid p { margin:0; color:var(--muted); font-size:10px; line-height:1.5; }
-.lab-section { background:#172823; color:white; padding:100px 0 110px; }
+.lab-only-page { min-height:100vh; background:#172823; }
+.lab-section { min-height:100vh; background:#172823; color:white; padding:42px 0; }
+.lab-only-page .section-heading { margin-bottom:28px; }
 .section-heading.light > p { color:#a9b5b0; }.section-heading.light .eyebrow { color:#75c6ae; }
 .model-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
 .model-tabs button { border:1px solid #40504a; color:#9eaaa5; background:#1c312a; padding:15px 17px; display:flex; align-items:center; text-align:left; gap:14px; }
