@@ -6,9 +6,9 @@ Página única con un laboratorio interactivo para observar, por fases, tres mod
 
 El usuario dibuja un número en una cuadrícula. Cada cuadro funciona como un píxel de entrada; la simulación convierte esos píxeles en activaciones, compara el patrón con los números del 0 al 9 y devuelve los tres candidatos con mayor probabilidad.
 
-La captura original mostraba `NaN% confianza`. Era un error: la probabilidad podía quedar sin un valor válido durante la normalización. Se corrigió calculando pesos finitos, comprobando el total y normalizando los tres resultados para que sumen 100%.
+La captura original mostraba `NaN% confianza`. La causa era una cuadrícula reservada para 120 valores cuyo patrón podía extenderse hasta la posición 130. Se corrigió usando una matriz completa de 12×12 (144 píxeles), comparaciones seguras y una normalización finita cuyos tres resultados suman 100%.
 
-![Red neuronal antes de la corrección](docs/screenshots/red-neuronal-antes-de-correccion.png)
+![Red neuronal reconociendo el número siete](docs/screenshots/red-neuronal-reconocimiento.png)
 
 ## 2. Random Forest: riesgo de abandono
 
