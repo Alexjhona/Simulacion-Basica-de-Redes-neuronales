@@ -25,7 +25,7 @@ const digitPatterns: Record<number, string[]> = {
   9: ["00111100","01100110","11000011","11000011","01100111","00111111","00000011","00000110","00001100","01111000"],
 };
 
-function blankGrid() { return Array(120).fill(0); }
+function blankGrid() { return Array(144).fill(0); }
 
 function patternGrid(n: number) {
   const result = blankGrid();
@@ -39,8 +39,9 @@ function recognizeDigit(grid: number[]) {
   const ranked = Object.entries(digitPatterns).map(([n]) => {
     const template = patternGrid(Number(n));
     let diff = 0;
-    for (let i = 0; i < grid.length; i++) diff += Math.abs(grid[i] - template[i]);
-    return { n: Number(n), score: Math.max(0.01, 1 - diff / grid.length) };
+    const length = Math.max(grid.length, template.length);
+    for (let i = 0; i < length; i++) diff += Math.abs((grid[i] ?? 0) - (template[i] ?? 0));
+    return { n: Number(n), score: Math.max(0.01, 1 - diff / length) };
   }).sort((a, b) => b.score - a.score);
   const finalists = ranked.slice(0, 3);
   const weights = finalists.map(item => Math.exp(item.score * 8));
@@ -120,6 +121,9 @@ export function CrispLab() {
           <div className="workbench" style={{"--model-accent": models[model].accent} as React.CSSProperties}>
             <div className="workbench-head"><div><span>{models[model].short}</span><p><small>MODELO ACTIVO</small><strong>{models[model].title}</strong></p></div><div className="phase-nav">{phaseLabels.map((label, i) => <button className={phase === i ? "active" : phase > i ? "done" : ""} onClick={() => setPhase(i)} key={label}><span>{phase > i ? "✓" : i + 1}</span>{label}</button>)}</div></div>
 
+            {model === "rn" && <div className="model-guide rn-guide"><strong>¿Qué hace?</strong><p>Convierte el dibujo en píxeles, activa neuronas que encuentran patrones y compara diez salidas para decidir qué número es.</p><div><span><b>1</b>Píxeles</span><i>→</i><span><b>2</b>Activaciones</span><i>→</i><span><b>3</b>Patrones</span><i>→</i><span><b>4</b>Probabilidad</span></div></div>}
+            {model === "rf" && <div className="model-guide rf-guide"><strong>¿Qué hace?</strong><p>Cada árbol analiza el perfil del cliente por separado. El bosque reúne sus votos y calcula el riesgo de abandono.</p><div><span><b>1</b>Variables</span><i>→</i><span><b>2</b>Cinco árboles</span><i>→</i><span><b>3</b>Votación</span><i>→</i><span><b>4</b>Riesgo</span></div></div>}
+
             <div className="workbench-body">
               <div className="input-panel">
                 {model === "rn" && <>
@@ -173,8 +177,15 @@ function Slider({label,value,setValue,min,max,unit,prefix=false}:{label:string,v
 }
 
 function NeuralView({phase,active,result}:{phase:number,active:number,result:number}) {
-  const layers = [[1,1,1,1,1,1,1,1],[1,1,1,1,1,1],[1,1,1,1,1],[1,1,1]];
-  return <div className={`neural-view phase-${phase}`}><div className="network">{layers.map((layer,li) => <div className="node-layer" key={li}>{layer.map((_,i) => <i key={i} style={{opacity: .25 + ((active+i*7+li*11)%10)/14}}></i>)}</div>)}</div><div className="network-caption"><span>{active} píxeles</span><span>64 activaciones</span><span>32 patrones</span><span>clase {result}</span></div></div>;
+  const layers = [8, 6, 5, 3];
+  return <div className={`neural-view phase-${phase}`}>
+    <div className="network">
+      <div className="signal-lanes" aria-hidden="true">{Array.from({length:7}).map((_,i) => <i key={i} style={{"--lane": i, "--delay": `${i * .16}s`} as React.CSSProperties}><b></b></i>)}</div>
+      {layers.map((count,li) => <div className={`node-layer layer-${li}`} key={li}>{Array.from({length:count}).map((_,i) => <i key={i} style={{"--node-delay": `${li * .38 + i * .06}s`, opacity: .34 + ((active+i*7+li*11)%10)/16} as React.CSSProperties}><b></b></i>)}</div>)}
+    </div>
+    <div className="network-caption"><span><b>1</b>{active} píxeles</span><span><b>2</b>64 activaciones</span><span><b>3</b>32 patrones</span><span><b>4</b>clase {result}</span></div>
+    <div className="flow-status"><i></i><span>{phase === 0 ? "Leyendo el dibujo" : phase === 1 ? "Normalizando píxeles" : phase === 2 ? "Propagando activaciones" : `Salida más probable: ${result}`}</span></div>
+  </div>;
 }
 
 function ForestView({phase,votes}:{phase:number,votes:boolean[]}) {
